@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"strconv"
 	"text/template"
 	"time"
@@ -260,6 +261,14 @@ func (c *ConfigCreateFile) Perform(w http.ResponseWriter, r *Process) {
 	}
 	fileName := b.String()
 	log.Printf("[DEBUG] Create file %v", fileName)
+
+	dir := path.Base(fileName)
+	err = os.MkdirAll(dir, 0755)
+	if err != nil {
+		log.Printf("[ERROR] Failed to create directory %v, %v", dir, err)
+		http.Error(w, "Could not process request due to a system error, please try again later.", http.StatusInternalServerError)
+		return
+	}
 
 	f, err := os.Create(fileName)
 	if err != nil {

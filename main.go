@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 	"text/template"
 	"time"
 
@@ -196,6 +197,17 @@ func (c *ConfigReceive) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
 }
 
+func (c *Process) fieldMapSafe() map[string]interface{} {
+	res := make(map[string]interface{})
+	for name, field := range c.Fields {
+		val := fmt.Sprintf("%v", field.Value)
+		if !strings.Contains(val, "/") {
+			res[name] = field.Value
+		}
+	}
+	return res
+}
+
 func (c *Process) fieldMap() map[string]interface{} {
 	res := make(map[string]interface{})
 	for name, field := range c.Fields {
@@ -251,7 +263,8 @@ func (c *ConfigCreateFile) Perform(w http.ResponseWriter, r *Process) {
 		return
 	}
 	t.Funcs(template.FuncMap{
-		"field": r.fieldMap,
+		"field":       r.fieldMapSafe,
+		"unsafeField": r.fieldMap,
 	})
 	err = t.Execute(&b, r)
 	if err != nil {
